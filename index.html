@@ -21,6 +21,7 @@
         #output {
             margin-top: 20px;
             font-size: 1.2em;
+            color: red;
         }
     </style>
 </head>
@@ -62,21 +63,37 @@
 
         // Função para enviar os dados do QR Code ao Google Sheets
         function sendToGoogleSheets(qrData) {
-            const url = "https://script.google.com/macros/s/AKfycbwmWwQ90t-REpemSAIUtN-_SJolNJGp3TpZGw6-_ZLJZj09p9gBLECzauIQFbm2_UqR/exec";
-            const data = { data: qrData };
+            const url = "https://script.google.com/macros/s/AKfycbx_4CEY6Jman7yJHWyx2WQtVCyf-aVkJOZhfsfiKkv6qYj0WDB6-wBlGfckJH2hCGZW/exec";
             
-            fetch(url, {
-                method: "POST",
-                mode: "no-cors",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data)
-            }).then(response => {
-                output.textContent += "\nData sent to Google Sheets!";
-            }).catch(error => {
-                output.textContent += "\nError sending data!";
-            });
+            // Dividir os dados lidos no QR Code por vírgulas
+            const dadosSeparados = qrData.split(',');
+
+            // Certifique-se de que existam 4 partes separadas no QR Code
+            if (dadosSeparados.length === 4) {
+                const data = {
+                    nome: dadosSeparados[0],
+                    cpf: dadosSeparados[1],
+                    placa: dadosSeparados[2],
+                    classificacao: dadosSeparados[3]
+                };
+                
+                fetch(url, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    output.textContent = "\nData sent to Google Sheets!";
+                })
+                .catch(error => {
+                    output.textContent = "\nError sending data: " + error.message;
+                });
+            } else {
+                output.textContent = "QR Code format is incorrect. Ensure the data is separated by commas.";
+            }
         }
 
         setInterval(scanQRCode, 1000); // Scannear a cada segundo
