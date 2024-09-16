@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Reader</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            flex-direction: column;
+        }
+        video {
+            border: 1px solid black;
+            width: 320px;
+            height: 240px;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code Reader</h1>
+    <video id="video" autoplay></video>
+    <div id="output">Waiting for QR Code...</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const output = document.getElementById('output');
+        let scanResult = '';
+
+        // Acessar a câmera
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then((stream) => {
+            video.srcObject = stream;
+        });
+
+        // Função para ler QR Code a partir do vídeo
+        function scanQRCode() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                if (scanResult !== code.data) {
+                    scanResult = code.data;
+                    output.textContent = `QR Code Detected: ${scanResult}`;
+                    sendToGoogleSheets(scanResult);
+                }
+            }
+        }
+
+        // Função para enviar os dados do QR Code ao Google Sheets
+        function sendToGoogleSheets(qrData) {
+            const url = "https://script.google.com/macros/s/AKfycbwmWwQ90t-REpemSAIUtN-_SJolNJGp3TpZGw6-_ZLJZj09p9gBLECzauIQFbm2_UqR/exec";
+            const data = { data: qrData };
+            
+            fetch(url, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data)
+            }).then(response => {
+                output.textContent += "\nData sent to Google Sheets!";
+            }).catch(error => {
+                output.textContent += "\nError sending data!";
+            });
+        }
+
+        setInterval(scanQRCode, 1000); // Scannear a cada segundo
+    </script>
+</body>
+</html>
