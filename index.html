@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Reader</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js" defer></script>
+    <script src="script.js" type="module" defer></script>
+
     <style>
         body {
             display: flex;
@@ -29,74 +33,5 @@
     <h1>QR Code Reader</h1>
     <video id="video" autoplay></video>
     <div id="output">Waiting for QR Code...</div>
-
-    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
-    <script>
-        const video = document.getElementById('video');
-        const output = document.getElementById('output');
-        let scanResult = '';
-
-        // Acessar a câmera
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then((stream) => {
-            video.srcObject = stream;
-        });
-
-        // Função para ler QR Code a partir do vídeo
-        function scanQRCode() {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
-            
-            if (code) {
-                if (scanResult !== code.data) {
-                    scanResult = code.data;
-                    output.textContent = `QR Code Detected: ${scanResult}`;
-                    sendToGoogleSheets(scanResult);
-                }
-            }
-        }
-
-        // Função para enviar os dados do QR Code ao Google Sheets
-        function sendToGoogleSheets(qrData) {
-            const url = "https://script.google.com/macros/s/AKfycbx_4CEY6Jman7yJHWyx2WQtVCyf-aVkJOZhfsfiKkv6qYj0WDB6-wBlGfckJH2hCGZW/exec";
-            
-            // Dividir os dados lidos no QR Code por vírgulas
-            const dadosSeparados = qrData.split(',');
-
-            // Certifique-se de que existam 4 partes separadas no QR Code
-            if (dadosSeparados.length === 4) {
-                const data = {
-                    nome: dadosSeparados[0],
-                    cpf: dadosSeparados[1],
-                    placa: dadosSeparados[2],
-                    classificacao: dadosSeparados[3]
-                };
-                
-                fetch(url, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(response => {
-                    output.textContent = "\nData sent to Google Sheets!";
-                })
-                .catch(error => {
-                    output.textContent = "\nError sending data: " + error.message;
-                });
-            } else {
-                output.textContent = "QR Code format is incorrect. Ensure the data is separated by commas.";
-            }
-        }
-
-        setInterval(scanQRCode, 1000); // Scannear a cada segundo
-    </script>
 </body>
 </html>
