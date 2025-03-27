@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Reader - ADMIN</title>
+
+    <script type="module" defer>
+        import { enviarDados } from './script.js'
+        window.enviarDados = enviarDados
+        window.admin = true
+    </script>
+</head>
+<body>
+    <button onclick="enviarDados()">ENVIAR DADOS</button>
+</body>
+<script>
+    const user = prompt("Usuário: ")
+    const password = prompt("Senha: ")
+
+
+    if(user !== "admin" && password !== "admin"){
+        window.location.href = "index.html"
+    }
+</script>
+</html>

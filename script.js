@@ -9,6 +9,8 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).th
 
 // Função para ler QR Code a partir do vídeo
 function scanQRCode() {
+    if (admin) return
+
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')
     canvas.width = video.videoWidth
@@ -36,31 +38,27 @@ function sendToGoogleSheets(qrData) {
 
 
     // Certifique-se de que existam 4 partes separadas no QR Code
-    if (dadosSeparados.length === 4) {
-        const data = {
-            nome: qrData.nome,
-            cpf: qrData.CPFCNPJ,
-            placa: qrData.placa,
-            classificacao: qrData.classificacao
-        };
-
-        fetch(url, {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data)
-        })
-            .then(response => {
-                output.textContent = "\nData sent to Google Sheets!"
-            })
-            .catch(error => {
-                output.textContent = "\nError sending data: " + error.message
-            })
-    } else {
-        output.textContent = "QR Code format is incorrect. Ensure the data is separated by commas."
+    const data = {
+        nome: qrData.nome,
+        cpf: qrData.CPFCNPJ,
+        placa: qrData.placa,
+        classificacao: qrData.classificacao
     }
+
+    fetch(url, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data)
+    })
+        .then(response => {
+            output.textContent = "\nData sent to Google Sheets!"
+        })
+        .catch(error => {
+            output.textContent = "\nError sending data: " + error.message
+        })
 }
 
 setInterval(scanQRCode, 1000) // Scannear a cada segundo
@@ -102,19 +100,15 @@ export async function salvarDados(dados) {
 }
 
 
-async function enviarDados(){
-    const hora = new Date().getHours()
-
-    console.log('Hora: ', hora)
-    if(hora !== 0) return
-    console.log('Enviando os dados!')
-    try{
+export async function enviarDados() {
+    try {
+        console.log('Enviando os dados!')
         const dados = await getDocs(collection(db, 'Veículos'))
 
-        for(const dado of dados.docs){
+        for (const dado of dados.docs) {
             const enviado = dado.data().enviado
 
-            if(enviado) continue
+            if (enviado) continue
 
             sendToGoogleSheets(dado.data())
 
@@ -125,11 +119,9 @@ async function enviarDados(){
         }
 
         console.log('Dados enviados com sucesso!')
-    }catch(erro){
+        alert('Dados enviados com sucesso!')
+    } catch (erro) {
+        console.error('Não foi possível enviar os dados: ', erro)
         console.error(erro)
     }
 }
-
-setInterval(() => {
-    enviarDados()
-}, 3600000);
